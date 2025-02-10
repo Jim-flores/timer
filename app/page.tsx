@@ -1,101 +1,133 @@
-import Image from "next/image";
+"use client";
+import { CSSProperties, useEffect, useState } from "react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [hours, setHours] = useState("00");
+  const [minutes, setMinutes] = useState("00");
+  const [seconds, setSeconds] = useState("00");
+  const [start, setStart] = useState(false);
+  const [pause, setPause] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    if (start && !pause) {
+      timer = setInterval(() => {
+        setSeconds((prev) => {
+          let sec = parseInt(prev, 10);
+          let min = parseInt(minutes, 10);
+          let hr = parseInt(hours, 10);
+
+          if (sec > 0) {
+            sec -= 1;
+          } else if (min > 0) {
+            sec = 59;
+            min -= 1;
+            setMinutes(min.toString().padStart(2, "0"));
+          } else if (hr > 0) {
+            sec = 59;
+            min = 59;
+            hr -= 1;
+            setMinutes(min.toString().padStart(2, "0"));
+            setHours(hr.toString().padStart(2, "0"));
+          } else {
+            clearInterval(timer);
+            setStart(false);
+          }
+
+          return sec.toString().padStart(2, "0");
+        });
+      }, 1000);
+    }
+
+    return () => clearInterval(timer);
+  }, [start, pause, hours, minutes, seconds]);
+
+  const transformTime = (value: string, isHours: boolean) => {
+    let num = parseInt(value, 10) || 0;
+    if (isHours) num = Math.min(num, 24);
+    else num = Math.min(num, 59);
+    return num.toString().padStart(2, "0");
+  };
+
+  return (
+    <div className="flex justify-center items-center w-full h-screen bg-[url('/clocks.jpg')] bg-cover bg-center">
+      <div className="sm:w-[500px] h-[500px] border-white/20 border-2 rounded-2xl flex flex-col p-4 justify-center items-center bg-[#ab7b55]/55">
+        <h1 className="text-3xl font-bold mb-10">TIMER</h1>
+        <div className="grid grid-flow-col gap-5 text-center auto-cols-max">
+          {["hours", "minutes", "seconds"].map((unit) => (
+            <div className="flex flex-col" key={unit}>
+              <span className="countdown font-mono text-5xl">
+                {!start ? (
+                  <input
+                    className="w-[70px] text-right bg-[#ab7b55]"
+                    type="number"
+                    max={unit === "hours" ? 24 : 59}
+                    min={0}
+                    onChange={(e) => {
+                      const value = transformTime(
+                        e.target.value,
+                        unit === "hours"
+                      );
+                      if (unit === "hours") setHours(value);
+                      else if (unit === "minutes") setMinutes(value);
+                      else setSeconds(value);
+                    }}
+                    value={
+                      unit === "hours"
+                        ? hours
+                        : unit === "minutes"
+                        ? minutes
+                        : seconds
+                    }
+                  />
+                ) : (
+                  <span
+                    style={
+                      {
+                        "--value":
+                          unit === "hours"
+                            ? hours
+                            : unit === "minutes"
+                            ? minutes
+                            : seconds,
+                      } as CSSProperties
+                    }
+                  ></span>
+                )}
+              </span>
+              {unit}
+            </div>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        {!start ? (
+          <button
+            className="border w-1/2 mt-4 cursor-pointer"
+            onClick={() => setStart(true)}
+            disabled={hours === "00" && minutes === "00" && seconds === "00"}
+          >
+            Start
+          </button>
+        ) : (
+          <div className="w-1/2 flex gap-2 mt-4">
+            <button className="border w-full cursor-pointer" onClick={() => setPause(!pause)}>
+              {pause ? "Continue" : "Pause"}
+            </button>
+            <button
+              className="border w-full cursor-pointer"
+              onClick={() => {
+                setStart(false);
+                setPause(false);
+                setHours("00");
+                setMinutes("00");
+                setSeconds("00");
+              }}
+            >
+              Reset
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
